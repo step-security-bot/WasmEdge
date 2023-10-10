@@ -131,7 +131,8 @@ Expect<std::unique_ptr<AST::Module>> Loader::loadModule() {
 
   // Variables to record the loaded section types.
   HasDataSection = false;
-  std::bitset<0x0DU> Secs;
+  const uint8_t SecsNum = 0x0EU;
+  std::bitset<SecsNum> Secs;
 
   // Read Section index and create Section nodes.
   while (true) {
@@ -149,7 +150,7 @@ Expect<std::unique_ptr<AST::Module>> Loader::loadModule() {
     }
 
     // Sections except the custom section should be unique.
-    if (NewSectionId > 0x00U && NewSectionId < 0x0DU &&
+    if (NewSectionId > 0x00U && NewSectionId < SecsNum &&
         Secs.test(NewSectionId)) {
       return logLoadError(ErrCode::Value::JunkSection, FMgr.getLastOffset(),
                           ASTNodeAttr::Module);
@@ -255,11 +256,27 @@ Expect<std::unique_ptr<AST::Module>> Loader::loadModule() {
       HasDataSection = true;
       Secs.set(NewSectionId);
       break;
+    case 0x0D:
+      // This section is for ExceptionHandling proposal.
+      if (!Conf.hasProposal(Proposal::ExceptionHandling)) {
+        return logNeedProposal(ErrCode::Value::MalformedSection,
+                               Proposal::ExceptionHandling,
+                               FMgr.getLastOffset(), ASTNodeAttr::Module);
+      }
+      if (auto Res = loadSection(Mod->getTagSection()); !Res) {
+        spdlog::error(ErrInfo::InfoAST(ASTNodeAttr::Module));
+        return Unexpect(Res);
+      }
+      Secs.set(NewSectionId);
+      break;
     default:
       return logLoadError(ErrCode::Value::MalformedSection,
                           FMgr.getLastOffset(), ASTNodeAttr::Module);
     }
   }
+
+  setTagFunctionType(Mod->getTagSection(), Mod->getImportSection(),
+                     Mod->getTypeSection());
 
   // Verify the function section and code section are matched.
   if (Mod->getFunctionSection().getContent().size() !=

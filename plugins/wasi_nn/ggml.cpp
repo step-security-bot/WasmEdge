@@ -6,6 +6,7 @@
 
 #ifdef WASMEDGE_PLUGIN_WASI_NN_BACKEND_GGML
 #include "simdjson.h"
+#include <algorithm>
 #include <common.h>
 #include <cstdlib>
 #include <llama.h>
@@ -29,10 +30,14 @@ Expect<ErrNo> parseMetadata(Graph &GraphRef, const std::string &Metadata,
   // Get metadata from the json.
   // Need to update Model:
   // * n_gpu_layers
+  // * main_gpu
+  // * tensor_split
 
   // Get the current llama parameters.
   llama_model_params ModelParams = llama_model_default_params();
   ModelParams.n_gpu_layers = GraphRef.NGPULayers;
+  ModelParams.main_gpu = GraphRef.MainGPU;
+  ModelParams.tensor_split = GraphRef.TensorSplit.data();
 
   // The plugin parameters.
   if (Doc.at_key("enable-log").error() == simdjson::SUCCESS) {
@@ -94,6 +99,44 @@ Expect<ErrNo> parseMetadata(Graph &GraphRef, const std::string &Metadata,
       spdlog::error(
           "[WASI-NN] GGML backend: Unable to retrieve the n-gpu-layers option."sv);
       return ErrNo::InvalidArgument;
+    }
+  }
+  if (Doc.at_key("main-gpu").error() == simdjson::SUCCESS) {
+    auto Err = Doc["main-gpu"].get<int64_t>().get(GraphRef.MainGPU);
+    if (Err) {
+      spdlog::error(
+          "[WASI-NN] GGML backend: Unable to retrieve the main-gpu option."sv);
+      return ErrNo::InvalidArgument;
+    }
+  }
+  if (Doc.at_key("tensor-split").error() == simdjson::SUCCESS) {
+    // The TensorSplit is a comma-separated list of non-negative values.
+    // E.g., "3,2" presents 60% of the data to GPU 0 and 40% to GPU 1.
+    std::string_view TSV;
+    auto Err = Doc["tensor-split"].get<std::string_view>().get(TSV);
+    if (Err) {
+      spdlog::error(
+          "[WASI-NN] GGML backend: Unable to retrieve the tensor-split option."sv);
+      return ErrNo::InvalidArgument;
+    }
+    std::string TS(TSV);
+    std::replace(TS.begin(), TS.end(), ',', ' ');
+    std::stringstream SS(TS);
+    GraphRef.TensorSplit.clear();
+    while (SS.good()) {
+      float TmpTensor;
+      SS >> TmpTensor;
+      GraphRef.TensorSplit.push_back(TmpTensor);
+    }
+    uint32_t NDevices = llama_max_devices();
+    if (GraphRef.TensorSplit.size() > NDevices) {
+      spdlog::error(
+          "[WASI-NN] GGML backend: Number of Tensor-Split is larger "
+          "than MaxDevices, please reduce the size of tensor-split."sv);
+      return ErrNo::InvalidArgument;
+    }
+    for (uint32_t Idx = GraphRef.TensorSplit.size(); Idx < NDevices; Idx++) {
+      GraphRef.TensorSplit.push_back(0.0f);
     }
   }
 
@@ -257,9 +300,9 @@ Expect<ErrNo> getEmbedding(WasiNNEnvironment &Env,
   // Check if the input is too long.
   if (static_cast<uint64_t>(CxtRef.LlamaInputs.size()) > MaxTokensListSize) {
     if (GraphRef.EnableLog) {
-      spdlog::info(
-          "[WASI-NN] GGML backend: the prompt is too long. Your input has {} tokens. Please reduce it to {} tokens."sv,
-          CxtRef.LlamaInputs.size(), MaxTokensListSize);
+      spdlog::info("[WASI-NN] GGML backend: the prompt is too long. Your input "
+                   "has {} tokens. Please reduce it to {} tokens."sv,
+                   CxtRef.LlamaInputs.size(), MaxTokensListSize);
     }
     return ErrNo::PromptTooLong;
   }
@@ -274,12 +317,13 @@ Expect<ErrNo> getEmbedding(WasiNNEnvironment &Env,
                                                    NTokens, NPast, SequenceId));
     if (Status == 1) {
       spdlog::error(
-          "[WASI-NN] GGML backend: failed to llama_decode: try reducing the size of the batch or increasing the size of context"sv);
+          "[WASI-NN] GGML backend: failed to llama_decode: try "
+          "reducing the size of the batch or increasing the size of context"sv);
       return ErrNo::RuntimeError;
     }
     if (Status < 0) {
-      spdlog::error(
-          "[WASI-NN] GGML backend: failed to llama_decode: internal fatal error. Please open an issue on GitHub"sv);
+      spdlog::error("[WASI-NN] GGML backend: failed to llama_decode: internal "
+                    "fatal error. Please open an issue on GitHub"sv);
       return ErrNo::RuntimeError;
     }
 
@@ -375,7 +419,8 @@ Expect<ErrNo> load(WasiNNEnvironment &Env, Span<const Span<uint8_t>> Builders,
   } else {
     if (GraphRef.EnableDebugLog) {
       spdlog::info(
-          "[WASI-NN][Debug] GGML backend: Model path not found in nn-preload, write model into a tmpfile."sv);
+          "[WASI-NN][Debug] GGML backend: Model path not found in nn-preload, "
+          "write model into a tmpfile."sv);
     }
     // TODO: pass the model directly to ggml
     // Write ggml model to file.
@@ -410,6 +455,8 @@ Expect<ErrNo> load(WasiNNEnvironment &Env, Span<const Span<uint8_t>> Builders,
   GraphRef.ModelFilePath = ModelFilePath;
   llama_model_params ModelParams = llama_model_default_params();
   ModelParams.n_gpu_layers = GraphRef.NGPULayers;
+  ModelParams.main_gpu = GraphRef.MainGPU;
+  ModelParams.tensor_split = GraphRef.TensorSplit.data();
   GraphRef.LlamaModel =
       llama_load_model_from_file(GraphRef.ModelFilePath.c_str(), ModelParams);
   if (GraphRef.LlamaModel == nullptr) {
@@ -632,9 +679,9 @@ Expect<ErrNo> compute(WasiNNEnvironment &Env, uint32_t ContextId) noexcept {
   // Check if the input is too long.
   if (static_cast<uint64_t>(CxtRef.LlamaInputs.size()) > MaxTokensListSize) {
     if (GraphRef.EnableLog) {
-      spdlog::info(
-          "[WASI-NN] GGML backend: the prompt is too long. Your input has {} tokens. Please reduce it to {} tokens."sv,
-          CxtRef.LlamaInputs.size(), MaxTokensListSize);
+      spdlog::info("[WASI-NN] GGML backend: the prompt is too long. Your input "
+                   "has {} tokens. Please reduce it to {} tokens."sv,
+                   CxtRef.LlamaInputs.size(), MaxTokensListSize);
     }
     return ErrNo::PromptTooLong;
   }
@@ -646,9 +693,9 @@ Expect<ErrNo> compute(WasiNNEnvironment &Env, uint32_t ContextId) noexcept {
       // Input too long.
       if (static_cast<uint64_t>(Embd.size()) > MaxTokensListSize) {
         if (GraphRef.EnableLog) {
-          spdlog::info(
-              "[WASI-NN] GGML backend: the prompt is too long. Your input has {} tokens. Please reduce it to {} tokens."sv,
-              Embd.size(), MaxTokensListSize);
+          spdlog::info("[WASI-NN] GGML backend: the prompt is too long. Your "
+                       "input has {} tokens. Please reduce it to {} tokens."sv,
+                       Embd.size(), MaxTokensListSize);
         }
         ReturnCode = ErrNo::PromptTooLong;
         break;
@@ -658,7 +705,8 @@ Expect<ErrNo> compute(WasiNNEnvironment &Env, uint32_t ContextId) noexcept {
       if (NPast + static_cast<uint64_t>(Embd.size()) > NCtx) {
         if (GraphRef.EnableLog) {
           spdlog::info(
-              "[WASI-NN] GGML backend: the context if full ({} / {} tokens). Please increase your ctx-size."sv,
+              "[WASI-NN] GGML backend: the context if full ({} / {} tokens). "
+              "Please increase your ctx-size."sv,
               NPast + static_cast<int>(Embd.size()), NCtx);
         }
         ReturnCode = ErrNo::ContextFull;
@@ -680,12 +728,14 @@ Expect<ErrNo> compute(WasiNNEnvironment &Env, uint32_t ContextId) noexcept {
                                                            NPast, SequenceId));
         if (Status == 1) {
           spdlog::error(
-              "[WASI-NN] GGML backend: failed to llama_decode: try reducing the size of the batch or increasing the size of context"sv);
+              "[WASI-NN] GGML backend: failed to llama_decode: try reducing "
+              "the size of the batch or increasing the size of context"sv);
           return ErrNo::RuntimeError;
         }
         if (Status < 0) {
           spdlog::error(
-              "[WASI-NN] GGML backend: failed to llama_decode: internal fatal error. Please open an issue on GitHub"sv);
+              "[WASI-NN] GGML backend: failed to llama_decode: internal "
+              "fatal error. Please open an issue on GitHub"sv);
           return ErrNo::RuntimeError;
         }
 
@@ -842,7 +892,8 @@ Expect<ErrNo> computeSingle(WasiNNEnvironment &Env,
   if (static_cast<uint64_t>(CxtRef.LlamaInputs.size()) > MaxTokensListSize) {
     if (GraphRef.EnableLog) {
       spdlog::info(
-          "[WASI-NN] GGML backend: the prompt is too long. Your input has {} tokens. Please reduce it to {} tokens."sv,
+          "[WASI-NN] GGML backend: the prompt is too long. Your input has {} "
+          "tokens. Please reduce it to {} tokens."sv,
           CxtRef.LlamaInputs.size(), MaxTokensListSize);
     }
     return ErrNo::PromptTooLong;
@@ -854,9 +905,9 @@ Expect<ErrNo> computeSingle(WasiNNEnvironment &Env,
       // Input too long.
       if (static_cast<uint64_t>(CxtRef.LlamaEmbd.size()) > MaxTokensListSize) {
         if (GraphRef.EnableLog) {
-          spdlog::info(
-              "[WASI-NN] GGML backend: the prompt is too long. Your input has {} tokens. Please reduce it to {} tokens."sv,
-              CxtRef.LlamaEmbd.size(), MaxTokensListSize);
+          spdlog::info("[WASI-NN] GGML backend: the prompt is too long. Your "
+                       "input has {} tokens. Please reduce it to {} tokens."sv,
+                       CxtRef.LlamaEmbd.size(), MaxTokensListSize);
         }
         return ErrNo::PromptTooLong;
       }
@@ -866,7 +917,8 @@ Expect<ErrNo> computeSingle(WasiNNEnvironment &Env,
           NCtx) {
         if (GraphRef.EnableLog) {
           spdlog::info(
-              "[WASI-NN] GGML backend: the context if full ({} / {} tokens). Please increase your ctx-size."sv,
+              "[WASI-NN] GGML backend: the context if full ({} / {} tokens). "
+              "Please increase your ctx-size."sv,
               CxtRef.LlamaNPast +
                   static_cast<uint64_t>(CxtRef.LlamaEmbd.size()),
               NCtx);
@@ -890,12 +942,14 @@ Expect<ErrNo> computeSingle(WasiNNEnvironment &Env,
                                              CxtRef.LlamaNPast, SequenceId));
         if (Status == 1) {
           spdlog::error(
-              "[WASI-NN] GGML backend: failed to llama_decode: try reducing the size of the batch or increasing the size of context"sv);
+              "[WASI-NN] GGML backend: failed to llama_decode: try reducing "
+              "the size of the batch or increasing the size of context"sv);
           return ErrNo::RuntimeError;
         }
         if (Status < 0) {
           spdlog::error(
-              "[WASI-NN] GGML backend: failed to llama_decode: internal fatal error. Please open an issue on GitHub"sv);
+              "[WASI-NN] GGML backend: failed to llama_decode: internal "
+              "fatal error. Please open an issue on GitHub"sv);
           return ErrNo::RuntimeError;
         }
 

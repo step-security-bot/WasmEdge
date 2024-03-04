@@ -17,7 +17,7 @@ create(const Plugin::PluginModule::ModuleDescriptor *) noexcept {
 }
 
 Plugin::Plugin::PluginDescriptor Descriptor{
-    .Name = "wasi:http/test",
+    .Name = "wasi_http",
     .Description = "",
     .APIVersion = Plugin::Plugin::CurrentAPIVersion,
     .Version = {0, 1, 0, 0},

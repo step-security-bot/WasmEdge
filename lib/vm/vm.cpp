@@ -37,18 +37,6 @@ createPluginModule(std::string_view PName, std::string_view MName) {
                 PName, MName);
   return std::make_unique<T>();
 }
-
-Expect<std::unique_ptr<Runtime::Instance::ModuleInstance>>
-findPluginModule(std::string_view PName, std::string_view MName) {
-  using namespace std::literals::string_view_literals;
-  if (const auto *Plugin = Plugin::Plugin::find(PName)) {
-    if (const auto *Module = Plugin->findModule(MName)) {
-      return Module->create();
-    }
-  }
-  spdlog::error("no plugin named: {} {}", PName, MName);
-  return Unexpect(ErrCode::Value::UnknownImport);
-}
 } // namespace
 
 VM::VM(const Configure &Conf)
@@ -119,10 +107,6 @@ void VM::unsafeLoadPlugInHosts() {
           "wasmedge_tensorflowlite"sv, "wasmedge_tensorflowlite"sv));
   PlugInModInsts.push_back(createPluginModule<Host::WasmEdgeImageModuleMock>(
       "wasmedge_image"sv, "wasmedge_image"sv));
-
-  if (auto Res = findPluginModule("wasi_http", "wasi:http/test"); Res) {
-    PlugInModInsts.push_back(std::move(*Res));
-  }
 
   // Load the other non-official plugins.
   for (const auto &Plugin : Plugin::Plugin::plugins()) {

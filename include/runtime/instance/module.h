@@ -46,7 +46,6 @@ class Executor;
 
 namespace Runtime {
 
-class Environment;
 class StoreManager;
 class CallingFrame;
 
@@ -448,7 +447,6 @@ protected:
   /// @}
 
   friend class Runtime::StoreManager;
-  friend class Runtime::Environment;
   using BeforeModuleDestroyCallback = void(StoreManager *Store,
                                            const ModuleInstance *Mod);
   void linkStore(StoreManager *Store, BeforeModuleDestroyCallback Callback) {

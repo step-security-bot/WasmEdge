@@ -34,23 +34,52 @@ Executor::instantiate(Runtime::StoreManager &StoreMgr,
     } else if (std::holds_alternative<ComponentSection>(Sec)) {
       CompInst->addComponent(std::get<ComponentSection>(Sec).getContent());
     } else if (std::holds_alternative<CoreInstanceSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<CoreInstanceSection>(Sec));
+      auto Res =
+          instantiate(StoreMgr, *CompInst, std::get<CoreInstanceSection>(Sec));
+      if (!Res) {
+        return Unexpect(Res);
+      }
     } else if (std::holds_alternative<InstanceSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<InstanceSection>(Sec));
+      auto Res =
+          instantiate(StoreMgr, *CompInst, std::get<InstanceSection>(Sec));
+      if (!Res) {
+        return Unexpect(Res);
+      }
     } else if (std::holds_alternative<ImportSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<ImportSection>(Sec));
+      auto Res = instantiate(StoreMgr, *CompInst, std::get<ImportSection>(Sec));
+      if (!Res) {
+        return Unexpect(Res);
+      }
     } else if (std::holds_alternative<CoreTypeSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<CoreTypeSection>(Sec));
+      auto Res =
+          instantiate(StoreMgr, *CompInst, std::get<CoreTypeSection>(Sec));
+      if (!Res) {
+      }
     } else if (std::holds_alternative<TypeSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<TypeSection>(Sec));
+      auto Res = instantiate(StoreMgr, *CompInst, std::get<TypeSection>(Sec));
+      if (!Res) {
+        return Unexpect(Res);
+      }
     } else if (std::holds_alternative<StartSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<StartSection>(Sec));
+      auto Res = instantiate(StoreMgr, *CompInst, std::get<StartSection>(Sec));
+      if (!Res) {
+        return Unexpect(Res);
+      }
     } else if (std::holds_alternative<CanonSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<CanonSection>(Sec));
+      auto Res = instantiate(StoreMgr, *CompInst, std::get<CanonSection>(Sec));
+      if (!Res) {
+        return Unexpect(Res);
+      }
     } else if (std::holds_alternative<AliasSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<AliasSection>(Sec));
+      auto Res = instantiate(StoreMgr, *CompInst, std::get<AliasSection>(Sec));
+      if (!Res) {
+        return Unexpect(Res);
+      }
     } else if (std::holds_alternative<ExportSection>(Sec)) {
-      instantiate(StoreMgr, *CompInst, std::get<ExportSection>(Sec));
+      auto Res = instantiate(StoreMgr, *CompInst, std::get<ExportSection>(Sec));
+      if (!Res) {
+        return Unexpect(Res);
+      }
     }
     spdlog::info("section complete");
   }

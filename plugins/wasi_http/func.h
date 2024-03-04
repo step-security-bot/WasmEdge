@@ -19,8 +19,7 @@ public:
 class WasiHttpGet : public WasiHttp<WasiHttpGet> {
 public:
   WasiHttpGet(WasiHttpEnvironment &HostEnv) : WasiHttp(HostEnv) {}
-  Expect<std::tuple<uint32_t, uint32_t>>
-  body(const Runtime::CallingFrame &Frame, uint64_t URIIndex);
+  Expect<uint32_t> body(const Runtime::CallingFrame &Frame, uint64_t URIIndex);
 };
 
 } // namespace Host

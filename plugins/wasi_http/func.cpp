@@ -5,6 +5,7 @@
 #include "common/defines.h"
 #include "common/errcode.h"
 
+#include <cpr/cpr.h>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -12,15 +13,22 @@
 namespace WasmEdge {
 namespace Host {
 
-Expect<void> WasiHttpPrint::body(const Runtime::CallingFrame &Frame,
-                                 uint32_t StrPtr, uint32_t StrLen) {
-
+Expect<void> WasiHttpPrint::body(const Runtime::CallingFrame &, uint32_t,
+                                 uint32_t) {
   return {};
 }
 
-Expect<std::tuple<uint32_t, uint32_t>>
-WasiHttpGet::body(const Runtime::CallingFrame &Frame, uint64_t URIIndex) {
-  return {};
+Expect<uint32_t> WasiHttpGet::body(const Runtime::CallingFrame &,
+                                   uint64_t URIIndex) {
+  auto URI = Env.loadURI(URIIndex);
+
+  cpr::Response r = cpr::Get(
+      cpr::Url{URI}, cpr::Authentication{"user", "pass", cpr::AuthMode::BASIC});
+  spdlog::info("status: {}", r.status_code);
+  spdlog::info("content type: {}", r.header["content-type"]);
+  spdlog::info("text: {}", r.text);
+
+  return r.status_code;
 }
 
 } // namespace Host

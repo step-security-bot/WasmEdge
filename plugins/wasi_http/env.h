@@ -5,7 +5,7 @@
 #include "plugin/plugin.h"
 
 #include <cstdint>
-#include <map>
+#include <vector>
 
 namespace WasmEdge {
 namespace Host {
@@ -13,6 +13,12 @@ namespace Host {
 class WasiHttpEnvironment {
 public:
   WasiHttpEnvironment() noexcept;
+
+  std::string_view loadURI(uint64_t URIIndex) { return URIs[URIIndex]; }
+
+private:
+  std::vector<std::string> URIs = {"https://www.google.com/",
+                                   "https://duckduckgo.com/"};
 };
 
 } // namespace Host

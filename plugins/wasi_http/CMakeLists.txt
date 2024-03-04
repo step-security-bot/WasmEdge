@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2019-2024 Second State INC
 
+include(FetchContent)
+FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
+                         GIT_TAG 3b15fa82ea74739b574d705fea44959b58142eb8)
+FetchContent_MakeAvailable(cpr)
+
 wasmedge_add_library(wasmedgePluginWasiHttp
   SHARED
   env.cpp
@@ -22,7 +27,9 @@ target_include_directories(wasmedgePluginWasiHttp
 
 target_link_libraries(wasmedgePluginWasiHttp
   PUBLIC
+  cpr::cpr
 )
+
 if(WASMEDGE_LINK_PLUGINS_STATIC)
   target_link_libraries(wasmedgePluginWasiHttp
     PRIVATE

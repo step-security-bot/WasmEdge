@@ -363,10 +363,16 @@ Executor::instantiate(Runtime::StoreManager &StoreMgr,
         // TODO
         break;
       case IndexKind::InstanceType:
-        spdlog::info("import an instance named {}", ImportStatement.getName());
-        const auto *Inst = StoreMgr.findModule(ImportStatement.getName());
-        spdlog::warn("pointer of imported instance: {}", Inst == nullptr);
-        CompInst.addModuleInstance(Inst);
+        auto ModName = ImportStatement.getName();
+        spdlog::info("import an instance named `{}`", ModName);
+        const auto *ImportedModInst = StoreMgr.findModule(ModName);
+        if (unlikely(ImportedModInst == nullptr)) {
+          spdlog::error(ErrCode::Value::UnknownImport);
+          spdlog::error("module name: {}", ModName);
+          spdlog::error(ErrInfo::InfoAST(ASTNodeAttr::Sec_CompImport));
+          return Unexpect(ErrCode::Value::UnknownImport);
+        }
+        CompInst.addModuleInstance(ImportedModInst);
         break;
       }
     } else if (std::holds_alternative<TypeBound>(Desc)) {

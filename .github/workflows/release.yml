@@ -23,8 +23,13 @@ jobs:
       version: ${{ steps.prep.outputs.version }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Ensure git safe directory
         run: |
           git config --global --add safe.directory $(pwd)
@@ -134,8 +139,13 @@ jobs:
     container:
       image: wasmedge/wasmedge:ubuntu-20.04-build-clang
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Grant the safe directory for git
@@ -213,8 +223,13 @@ jobs:
     container:
       image: wasmedge/wasmedge:ubuntu-build-clang-plugins-deps
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Grant the safe directory for git
@@ -349,8 +364,13 @@ jobs:
     container:
       image: wasmedge/wasmedge:${{ matrix.docker_tag }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Grant the safe directory for git
@@ -466,8 +486,13 @@ jobs:
       output_bins: libwasmedgePluginWasiCrypto.dylib libwasmedgePluginWasiLogging.dylib libwasmedgePluginWasmEdgeTensorflow.dylib libwasmedgePluginWasmEdgeTensorflowLite.dylib libwasmedgePluginWasmEdgeImage.dylib libwasmedgePluginWasmEdgeOpenCVMini.dylib libwasmedgePluginWasmEdgeZlib.dylib
     needs: create_release
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Grant the safe directory for git
@@ -562,8 +587,13 @@ jobs:
     container:
       image: wasmedge/wasmedge:manylinux2014_x86_64
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Grant the safe directory for git
         run: |
           git config --global --add safe.directory $(pwd)
@@ -571,7 +601,7 @@ jobs:
         run: |
           bash utils/docker/build-manylinux.sh -DWASMEDGE_USE_LLVM=OFF
       - name: Upload ${{ matrix.name }} tar.gz package to artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: build_manylinux2014_runtime_only
           path: build/WasmEdge-${{ needs.create_release.outputs.version }}-Linux.tar.gz
@@ -602,10 +632,15 @@ jobs:
       [create_release, build_on_manylinux2014, build_manylinux2014_runtime_only]
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Prepare tarball
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
         with:
           name: ${{ matrix.artifact_name }}
           path: utils/docker
@@ -621,9 +656,9 @@ jobs:
           echo "docker_image=${{ matrix.name }}" >> $GITHUB_OUTPUT
           echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@0d103c3126aa41d772a8362f6aa67afac040f80c # v3.1.0
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
@@ -658,14 +693,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: create_release
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
       - name: Grant the safe directory for git
         run: |
           git config --global --add safe.directory $(pwd)
       - name: generate sbom
-        uses: advanced-security/sbom-generator-action@v0.0.1
+        uses: advanced-security/sbom-generator-action@375dee8e6144d9fd0ec1f5667b4f6fb4faacefed # v0.0.1
         id: sbom
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

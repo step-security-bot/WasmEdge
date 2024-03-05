@@ -25,8 +25,13 @@ jobs:
     if: ${{ github.event_name != 'push' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Ensure git safe directory
@@ -34,7 +39,7 @@ jobs:
           git config --global --add safe.directory $(pwd)
 
       - name: Lint markdown format
-        uses: github/super-linter/slim@v5
+        uses: github/super-linter/slim@45fc0d88288beee4701c62761281edfee85655d7 # v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BRANCH: master
@@ -49,13 +54,18 @@ jobs:
       && (needs.lint-markdown.result == 'success' || needs.lint-markdown.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Ensure git safe directory
         run: |
           git config --global --add safe.directory $(pwd)
 
       - name: Setup mdBook
-        uses: peaceiris/actions-mdbook@v1
+        uses: peaceiris/actions-mdbook@adeb05db28a0c0004681db83893d56c0388ea9ea # v1.2.0
         with:
           mdbook-version: 'latest'
 
@@ -76,7 +86,7 @@ jobs:
 
       - name: Publish EN version
         if: ${{ github.event_name == 'push' }}
-        uses: cpina/github-action-push-to-another-repository@main
+        uses: cpina/github-action-push-to-another-repository@07c4d7b3def0a8ebe788a8f2c843a4e1de4f6900 # main
         env:
           API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB_WWW }}
         with:

@@ -55,7 +55,12 @@ jobs:
     outputs:
       version: ${{ steps.prep.outputs.version }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Ensure git safe directory
@@ -101,7 +106,12 @@ jobs:
     container:
       image: wasmedge/wasmedge:${{ matrix.docker_tag }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Ensure git safe directory
@@ -153,22 +163,22 @@ jobs:
           # The test binary consumes $WASI_NN_RPC_TEST_URI
           ./${test_bin} --gtest_filter=WasiNNTest.GGMLBackendWithRPC
       - name: Upload artifact - wasi_nn-pytorch
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_nn-pytorch-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasi_nn-pytorch.tar.gz
       - name: Upload artifact - wasi_nn-openvino
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_nn-openvino-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasi_nn-openvino.tar.gz
       - name: Upload artifact - wasi_nn-tensorflowlite
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_nn-tensorflowlite-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasi_nn-tensorflowlite.tar.gz
       - name: Upload artifact - wasi_nn-ggml
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_nn-ggml-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasi_nn-ggml.tar.gz
@@ -203,7 +213,12 @@ jobs:
       # Tests of wasm_bpf also require privileges
       options: --privileged
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Install dependencies
@@ -251,47 +266,47 @@ jobs:
             tar -zcvf plugin_${plugin_array[$i]}.tar.gz ${outbin_array[$i]}
           done
       - name: Upload artifact - wasi_crypto
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_crypto-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasi_crypto.tar.gz
       - name: Upload artifact - wasi_logging
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_logging-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasi_logging.tar.gz
       - name: Upload artifact - wasmedge_process
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_process-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasmedge_process.tar.gz
       - name: Upload artifact - wasmedge_tensorflow
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_tensorflow-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasmedge_tensorflow.tar.gz
       - name: Upload artifact - wasmedge_tensorflowlite
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_tensorflowlite-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasmedge_tensorflowlite.tar.gz
       - name: Upload artifact - wasmedge_image
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_image-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasmedge_image.tar.gz
       - name: Upload artifact - wasm_bpf
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasm_bpf-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasm_bpf.tar.gz
       - name: Upload artifact - wasmedge_opencvmini
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_opencvmini-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasmedge_opencvmini.tar.gz
       - name: Upload artifact - wasmedge_zlib
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_zlib-${{ needs.get_version.outputs.version }}-ubuntu22.04-${{ matrix.compiler }}.tar.gz
           path: plugin_wasmedge_zlib.tar.gz
@@ -344,7 +359,12 @@ jobs:
       # Tests of wasm_bpf also require privileges
       options: --privileged
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Build and install dependencies
@@ -390,48 +410,48 @@ jobs:
             tar -zcvf plugin_${plugin_array[$i]}.tar.gz ${outbin_array[$i]}
           done
       - name: Upload artifact - wasi_crypto
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_crypto-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasi_crypto.tar.gz
       - name: Upload artifact - wasi_logging
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_logging-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasi_logging.tar.gz
       - name: Upload artifact - wasmedge_process
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_process-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasmedge_process.tar.gz
       - name: Upload artifact - wasmedge_tensorflow
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_tensorflow-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasmedge_tensorflow.tar.gz
       - name: Upload artifact - wasmedge_tensorflowlite
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_tensorflowlite-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasmedge_tensorflowlite.tar.gz
       - name: Upload artifact - wasmedge_image
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_image-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasmedge_image.tar.gz
       - name: Upload artifact - wasm_bpf
         if: contains(matrix.docker_tag, 'manylinux2014_x86_64')
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasm_bpf-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasm_bpf.tar.gz
       - name: Upload artifact - wasmedge_opencvmini
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_opencvmini-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasmedge_opencvmini.tar.gz
       - name: Upload artifact - wasmedge_zlib
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_zlib-${{ needs.get_version.outputs.version }}-${{ matrix.docker_tag }}.tar.gz
           path: plugin_wasmedge_zlib.tar.gz
@@ -465,7 +485,12 @@ jobs:
       output_bins: libwasmedgePluginWasiCrypto.dylib libwasmedgePluginWasiLogging.dylib libwasmedgePluginWasmEdgeTensorflow.dylib libwasmedgePluginWasmEdgeTensorflowLite.dylib libwasmedgePluginWasmEdgeImage.dylib libwasmedgePluginWasmEdgeOpenCVMini.dylib
     needs: [get_version]
     steps:
-      - uses: actions/checkout@v3
+      - name: Harden Runner
+        uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           fetch-depth: 0
       - name: Build and install dependencies
@@ -516,32 +541,32 @@ jobs:
             tar -zcvf plugin_${plugin_array[$i]}.tar.gz ${outbin_array[$i]}
           done
       - name: Upload artifact - wasi_crypto
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_crypto-${{ needs.get_version.outputs.version }}-${{ matrix.darwin_version }}_${{ matrix.arch }}.tar.gz
           path: plugin_wasi_crypto.tar.gz
       - name: Upload artifact - wasi_logging
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasi_logging-${{ needs.get_version.outputs.version }}-${{ matrix.darwin_version }}_${{ matrix.arch }}.tar.gz
           path: plugin_wasi_logging.tar.gz
       - name: Upload artifact - wasmedge_tensorflow
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_tensorflow-${{ needs.get_version.outputs.version }}-${{ matrix.darwin_version }}_${{ matrix.arch }}.tar.gz
           path: plugin_wasmedge_tensorflow.tar.gz
       - name: Upload artifact - wasmedge_tensorflowlite
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_tensorflowlite-${{ needs.get_version.outputs.version }}-${{ matrix.darwin_version }}_${{ matrix.arch }}.tar.gz
           path: plugin_wasmedge_tensorflowlite.tar.gz
       - name: Upload artifact - wasmedge_image
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_image-${{ needs.get_version.outputs.version }}-${{ matrix.darwin_version }}_${{ matrix.arch }}.tar.gz
           path: plugin_wasmedge_image.tar.gz
       - name: Upload artifact - wasmedge_opencvmini
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
         with:
           name: WasmEdge-plugin-wasmedge_opencvmini-${{ needs.get_version.outputs.version }}-${{ matrix.darwin_version }}_${{ matrix.arch }}.tar.gz
           path: plugin_wasmedge_opencvmini.tar.gz
